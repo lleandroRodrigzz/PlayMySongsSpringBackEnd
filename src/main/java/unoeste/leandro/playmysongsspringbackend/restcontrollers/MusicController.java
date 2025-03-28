@@ -1,6 +1,7 @@
 // MusicController.java
 package unoeste.leandro.playmysongsspringbackend.restcontrollers;
 
+import jakarta.annotation.PostConstruct;
 import unoeste.leandro.playmysongsspringbackend.entities.Music;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,12 @@ public class MusicController {
     private HttpServletRequest request;
 
     private List<Music> musicsList = new ArrayList<>();
+
+    @PostConstruct
+    public void init() {
+        carregarMusicasSalvas();
+    }
+
 
     @PostMapping("/music_upload")
     public ResponseEntity<Object> musicUpload(@RequestParam("file") MultipartFile file,
@@ -86,6 +93,35 @@ public class MusicController {
         return ResponseEntity.ok(lista);
     }
 
+    @PostConstruct
+    public void carregarMusicasSalvas() {
+        File pasta = new File(UPLOAD_FOLDER);
+        if (pasta.exists() && pasta.isDirectory()) {
+            File[] arquivos = pasta.listFiles((dir, nome) -> nome.endsWith(".mp3"));
+            if (arquivos != null) {
+                for (File arquivo : arquivos) {
+                    String nomeArquivo = arquivo.getName().replace(".mp3", "");
+                    String[] partes = nomeArquivo.split("_");
+                    if (partes.length == 3) {
+                        String nome = partes[0];
+                        String estilo = partes[1];
+                        String cantor = partes[2];
+                        String url = "http://localhost:8080/uploads/" + arquivo.getName();
+
+                        boolean jaExiste = musicsList.stream().anyMatch(m ->
+                                m.getNome().equals(nome) &&
+                                        m.getCantor().equals(cantor) &&
+                                        m.getEstilo().equals(estilo)
+                        );
+
+                        if (!jaExiste) {
+                            musicsList.add(new Music(nome, estilo, cantor, url));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private String getHostStatic() {
         return "http://" + request.getServerName() + ":" + request.getServerPort() + "/uploads/";
