@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @CrossOrigin
 public class MusicController {
 
-    private final String UPLOAD_FOLDER = "src/main/resources/static/uploads/";
+    private final String UPLOAD_FOLDER = "uploads/";
 
     @Autowired
     private HttpServletRequest request;
@@ -58,6 +58,34 @@ public class MusicController {
         }
         return ResponseEntity.ok(resultados);
     }
+
+    @GetMapping("/musics")
+    public ResponseEntity<Object> listarMusicasDoDisco() {
+        List<Music> lista = new ArrayList<>();
+
+        File pasta = new File(UPLOAD_FOLDER);
+        if (pasta.exists() && pasta.isDirectory()) {
+            File[] arquivos = pasta.listFiles();
+            if (arquivos != null) {
+                for (File arquivo : arquivos) {
+                    if (arquivo.getName().endsWith(".mp3")) {
+                        String nomeArquivo = arquivo.getName().replace(".mp3", "");
+                        String[] partes = nomeArquivo.split("_");
+                        if (partes.length == 3) {
+                            String nome = partes[0];
+                            String estilo = partes[1];
+                            String cantor = partes[2];
+                            String url = getHostStatic() + arquivo.getName();
+                            lista.add(new Music(nome, estilo, cantor, url));
+                        }
+                    }
+                }
+            }
+        }
+
+        return ResponseEntity.ok(lista);
+    }
+
 
     private String getHostStatic() {
         return "http://" + request.getServerName() + ":" + request.getServerPort() + "/uploads/";
